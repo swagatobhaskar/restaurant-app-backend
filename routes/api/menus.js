@@ -1,9 +1,9 @@
 const express = require('express');
 const router = express.Router();
 const fs = require('fs');
-const  path = require('path');
+const path = require('path');
 const multer = require('multer');
-const  bodyParser = require('body-parser');
+const bodyParser = require('body-parser');
 
 const storage = multer.diskStorage({
     destination: function (req, file, cb) {
