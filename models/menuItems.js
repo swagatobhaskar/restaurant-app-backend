@@ -4,15 +4,19 @@ const menuItemSchema = new mongoose.Schema({
     name: {
         type: String,
         required: true,
-        maxLength: 40
+        maxLength: 40,
+        unique: true
     },
     price: Number,
     category: {
         type: String,
-        enum: ['Veg', 'Non-veg']
+        enum: ['veg', 'non-veg']
     },
     weight: Number,
-    photo: { required: false },
+    photo: {
+        type: String,
+        required: false
+    },
     ingredients: [String]
 });
 

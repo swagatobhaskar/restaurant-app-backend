@@ -20,3 +20,7 @@ app.use('/api/menu', menuRoute);
 app.listen(
         port, () => console.log(`Server running on port ${port}`)
     );
+
+ // The module “body-parser” enables reading (parsing) HTTP-POST data.
+ // Dotenv is a zero-dependency module that loads environment variables from a .env file into process.env.
+ // Multer is a node.js middleware for handling multipart/form-data, which is primarily used for uploading files
