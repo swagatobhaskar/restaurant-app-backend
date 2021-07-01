@@ -17,7 +17,13 @@ const menuItemSchema = new mongoose.Schema({
         type: String,
         required: false
     },
-    ingredients: [String]
+    ingredients: [String],
+    status: {
+        type: String,
+        required: true,
+        enum: ['available', 'out-of-stock'],
+        default: 'available'
+    }
 });
 
 const MenuItem = mongoose.model('MenuItem', menuItemSchema);
