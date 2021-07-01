@@ -2,7 +2,7 @@ const mongoose = require('mongoose');
 
 const orderSchema = new mongoose.Schema({
     menuItem: String,
-    totalPrice: mongoose.Types.Decimal128,
+    totalPrice: Number,
     quantity: {
         type: Number,
         default: 1

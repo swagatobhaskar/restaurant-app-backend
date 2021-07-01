@@ -10,7 +10,8 @@ const connectMongoDB = async () => {
                 useNewUrlParser: true,
                 // added as this error was showing:
                 // (node:19932) DeprecationWarning: collection.ensureIndex is deprecated. Use createIndexes instead.
-                useCreateIndex: true
+                useCreateIndex: true,
+                useFindAndModify: false
             });
             console.log('MongoDB database connection established successfully');
     } catch(err) {

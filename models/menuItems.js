@@ -14,7 +14,8 @@ const menuItemSchema = new mongoose.Schema({
     },
     weight: Number,
     photo: {
-        type: String,
+        data: Buffer,
+        contentType: String,
         required: false
     },
     ingredients: [String],
@@ -24,6 +25,8 @@ const menuItemSchema = new mongoose.Schema({
         enum: ['available', 'out-of-stock'],
         default: 'available'
     }
+}, {
+    timestamps: true
 });
 
 const MenuItem = mongoose.model('MenuItem', menuItemSchema);

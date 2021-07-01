@@ -47,7 +47,7 @@ router.get('/', (req, res) => {
 // @route POST api/menus
 // @access admin
 router.post('/', upload.single('photo'),(req, res, next) => {
-    const photo = req.file.filename;
+    const photo = req.file && req.file.filename;
     const name = req.body.name;
     const price = req.body.price;
     const category = req.body.category;
