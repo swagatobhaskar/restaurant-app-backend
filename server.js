@@ -2,7 +2,8 @@ const express = require('express');
 const connectMongoDB = require('./config/mongo-db');
 const cors = require('cors');
 
-const menuRoute = require('./routes/api/menus');
+const menuRoutes = require('./routes/api/menus');
+const UserRoutes = require('./routes/api/user');
 
 require('dotenv').config();
 
@@ -15,7 +16,8 @@ app.use(cors({ origin: true, credentials: true }));
 app.use(express.json({ extended: false }));
 
 app.get('/', (req, res) => res.send('Hello world!'));
-app.use('/api/menu', menuRoute);
+app.use('/api/menus', menuRoutes);
+app.use('/api/user', UserRoutes);
 
 app.listen(
         port, () => console.log(`Server running on port ${port}`)
