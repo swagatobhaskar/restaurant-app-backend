@@ -49,9 +49,10 @@ const UserSchema = new mongoose.Schema({
 // This middleware needs to salt and hash passwords before they are saved to the database.
 UserSchema.pre('save', function(next){
     const user = this
+    const saltRounds = 10;
 
     if (this.isModified("password") || this.isNew) {
-        bcrypt.genSalt(10, function(saltError, salt) {
+        bcrypt.genSalt(saltRounds, function(saltError, salt) {
             if (saltError){
                 return next(saltError)
             } else {
@@ -69,6 +70,16 @@ UserSchema.pre('save', function(next){
         return next()
     }
 })
+
+UserSchema.methods.comparePassword = function(password, callback) {
+    bcrypt.compare(password, this.password, function(error, isMatch) {
+        if (error) {
+            return callback(error)
+        } else {
+            callback(null, isMatch)
+        }
+    })
+}
 
 const User = mongoose.model('User', UserSchema);
 
