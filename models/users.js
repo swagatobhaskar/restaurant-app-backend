@@ -21,14 +21,15 @@ const UserSchema = new mongoose.Schema({
         index: true,
     },
     address: {
-        zip: { type: String, required: false},
-        street: { type: String, required: false},
-        block: { type: String},
-    },
-    role: {
-        type: String,
-        default: "user",
-        enum: ["user", "staff", "admin"]
+        zip: {
+            type: String,
+            required: false
+        },
+        street: {
+            type: String,
+            required: false
+        },
+        block: { type: String },
     },
     password: {
         type: String,
@@ -36,6 +37,10 @@ const UserSchema = new mongoose.Schema({
         required: true,
         minLength: 8,
         maxLength: 32
+    },
+    role: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "Role"
     }
 },
 {
