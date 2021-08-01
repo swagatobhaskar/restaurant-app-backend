@@ -1,4 +1,5 @@
 const express = require('express');
+const cookieParser = require('cookie-parser')
 const connectMongoDB = require('./config/mongo-db');
 const cors = require('cors');
 
@@ -8,6 +9,7 @@ const userRoutes = require('./routes/api/user');
 require('dotenv').config();
 
 const app = express()
+app.use(cookieParser())
 const port = process.env.PORT || 3000;
 
 connectMongoDB();

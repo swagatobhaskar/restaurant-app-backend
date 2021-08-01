@@ -5,12 +5,27 @@ const jwt = require('jsonwebtoken');
 
 const User = require('../../models/users');
 
+const authMiddleware = (req, res, next) => {
+    const token = req.cookies.token;
+    console.log(req.cookies);
+    if (!token) return res.status(401).send("Access Denied");
+    
+    jwt.verify(token, process.env.SECRET_KEY, (err, user) => {
+        if (err) return res.sendStatus(403);
+        req.user = user;
+        next();
+    });
+};
+
 // PATH: /api/user/list
 // access: admin
-router.get('/list', (req, res) => {
-    User.find()
-        .then(users => res.json(users))
-        .catch(err => res.status(400).send("No user found"));
+router.get('/list', authMiddleware, async(req, res) => {
+    try {
+        const users = await User.find();
+        res.json(users);
+    } catch (err) {
+        res.status(400).send("No user found");
+    }
 });
 
 // PATH: /api/user/login
@@ -22,7 +37,8 @@ router.post('/login', (req, res) => {
             user.comparePassword(req.body.password, function(err, isMatch) {
                 if (err) throw err;
                 let token = jwt.sign({ id: user._id }, process.env.SECRET_KEY, {expiresIn: '24h'});
-                res.status(200).json({user: user, token: token});
+                res.cookie('token', token, {maxAge: 60*1000, httpOnly: true, secure: true})
+                res.status(200).json(user) //({user: user});
             });
         } else {
             res.status(404).send("User not found!")
@@ -45,14 +61,15 @@ router.post('/signup', (req, res) => {
         } else {
             let payload = { id: createdUser._id};
             const token = jwt.sign(payload, process.env.SECRET_KEY);
-            res.status(201).send({ token })
+            res.cookie('token', token, {maxAge: 60*1000, httpOnly: true, secure: true, sameSite: 'Lax'});
+            res.status(201).json(createdUser);
         }
     })
 });
 
 // PATH: /api/user/profile
 // access: private
-router.get('/:id', (req, res) => {
+router.get('/:id', authMiddleware, (req, res) => {
     // using arrow function callback
     User.findById(req.params.id, (err, resp) => {
         if (err){
