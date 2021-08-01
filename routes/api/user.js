@@ -1,8 +1,17 @@
+const { config } = require('dotenv');
 const express = require('express')
 const router = express.Router()
 const jwt = require('jsonwebtoken');
 
 const User = require('../../models/users');
+
+// PATH: /api/user/list
+// access: admin
+router.get('/list', (req, res) => {
+    User.find()
+        .then(users => res.json(users))
+        .catch(err => res.status(400).send("No user found"));
+});
 
 // PATH: /api/user/login
 // access: public
@@ -24,10 +33,23 @@ router.post('/login', (req, res) => {
 // PATH: /api/user/signup
 // access: public
 router.post('/signup', (req, res) => {
-    const newUser = new User(req.body)
-    newUser.save(req.body)
-        .then(newUser => res.json(newUser))
-        .catch(err => res.status(400).json({'error': 'please check entered data!'}));
+    let newUser = new User({
+        email: req.body.email,
+        password: req.body.password
+    });
+
+    newUser.save((err, createdUser) => {
+        if (err) {
+            //console.log(err);
+            res.status(400).json({'message': 'Some error occured!'});
+        } else {
+            let payload = { id: createdUser._id};
+            const token = jwt.sign(payload, process.env.SECRET_KEY);
+            res.status(201).send({ token })
+        }
+    })
+        //.then(newUser => res.json(newUser))
+        //.catch(err => res.status(400).json({'error': 'please check entered data!'}));
 });
 
 module.exports = router;
