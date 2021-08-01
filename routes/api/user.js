@@ -37,7 +37,7 @@ router.post('/login', (req, res) => {
             user.comparePassword(req.body.password, function(err, isMatch) {
                 if (err) throw err;
                 let token = jwt.sign({ id: user._id }, process.env.SECRET_KEY, {expiresIn: '24h'});
-                res.cookie('token', token, {maxAge: 60*1000, httpOnly: true, secure: true})
+                res.cookie('token', token, {maxAge: 60*1000, httpOnly: true, secure: true, sameSite: 'lax'})
                 res.status(200).json(user) //({user: user});
             });
         } else {
@@ -61,7 +61,7 @@ router.post('/signup', (req, res) => {
         } else {
             let payload = { id: createdUser._id};
             const token = jwt.sign(payload, process.env.SECRET_KEY);
-            res.cookie('token', token, {maxAge: 60*1000, httpOnly: true, secure: true, sameSite: 'Lax'});
+            res.cookie('token', token, {maxAge: 60*1000, httpOnly: true, secure: true, sameSite: 'lax'});
             res.status(201).json(createdUser);
         }
     })
