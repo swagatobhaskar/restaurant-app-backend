@@ -48,8 +48,19 @@ router.post('/signup', (req, res) => {
             res.status(201).send({ token })
         }
     })
-        //.then(newUser => res.json(newUser))
-        //.catch(err => res.status(400).json({'error': 'please check entered data!'}));
+});
+
+// PATH: /api/user/profile
+// access: private
+router.get('/:id', (req, res) => {
+    // using arrow function callback
+    User.findById(req.params.id, (err, resp) => {
+        if (err){
+            res.status(400).json({"message": "some error occured!"});
+        } else {
+            res.json(resp);
+        }
+    })
 });
 
 module.exports = router;
