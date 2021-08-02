@@ -1,5 +1,5 @@
 const mongoose = require('mongoose');
-const uuidv4 = require('uuid');
+const { v4: uuidv4 } = require('uuid');
 
 const RefreshTokenSchema = new mongoose.Schema({
     token: String,
@@ -21,7 +21,7 @@ RefreshTokenSchema.statics.createToken = async function(user) {
 
     let _object = new this({
         token: _token,
-        user: user._id,
+        user: user, // string of user._id
         expiryDate: expiredAt.getTime(),
     });
 

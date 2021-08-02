@@ -4,6 +4,7 @@ const router = express.Router()
 const jwt = require('jsonwebtoken');
 const Middlewares = require('../../utils/middlewares');
 const User = require('../../models/users');
+const utils = require('../../utils/jwtTokens');
 
 // PATH: /api/user/list
 // access: admin
@@ -24,8 +25,11 @@ router.post('/login', (req, res) => {
         if (user) {
             user.comparePassword(req.body.password, function(err, isMatch) {
                 if (err) throw err;
-                let token = jwt.sign({ id: user._id }, process.env.SECRET_KEY, {expiresIn: '24h'});
-                res.cookie('token', token, {maxAge: 60*1000, httpOnly: true, sameSite: 'lax'}) // secure: true, 
+                //let token = jwt.sign({ id: user._id }, process.env.SECRET_KEY, {expiresIn: '24h'});
+                let tokens = utils.generateTokens(user._id);
+                console.log("Tokens:: ", tokens);
+                res.cookie('access', tokens.access, {maxAge: 60000, httpOnly: true, sameSite: 'lax'}) // secure: true
+                res.cookie('refresh', tokens.refresh, {maxAge: 24*3600*1000, httpOnly: true, sameSite: 'lax'}) // secure: true, 
                 res.status(200).json(user) //({user: user});
             });
         } else {
