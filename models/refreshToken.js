@@ -1,7 +1,6 @@
 const mongoose = require('mongoose');
 const uuidv4 = require('uuid');
 
-
 const RefreshTokenSchema = new mongoose.Schema({
     token: String,
     user: {
