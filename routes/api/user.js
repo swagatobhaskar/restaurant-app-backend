@@ -2,23 +2,12 @@ const { config } = require('dotenv');
 const express = require('express')
 const router = express.Router()
 const jwt = require('jsonwebtoken');
-
+const Middlewares = require('../../utils/middlewares');
 const User = require('../../models/users');
-
-const authMiddleware = (req, res, next) => {
-    const token = req.cookies.token;
-    if (!token) return res.status(401).send("Access Denied");
-    
-    jwt.verify(token, process.env.SECRET_KEY, (err, user) => {
-        if (err) return res.sendStatus(403);
-        req.user = user;
-        next();
-    });
-};
 
 // PATH: /api/user/list
 // access: admin
-router.get('/list', authMiddleware, async(req, res) => {
+router.get('/list', Middlewares.authMiddleware, async(req, res) => {
     try {
         const users = await User.find();
         res.json(users);
@@ -59,7 +48,11 @@ router.post('/signup', (req, res) => {
             res.status(400).json({'message': 'Some error occured!'});
         } else {
             let payload = { id: createdUser._id};
-            const token = jwt.sign(payload, process.env.SECRET_KEY);
+            const token = jwt.sign(payload, process.env.SECRET_KEY, {
+                expiresIn: "1h",
+                jwtid: uuidv4(),    // required for refresh token as it points to one unique access token
+                subject: user._id.toString()
+            });
             res.cookie('token', token, {maxAge: 60*1000, httpOnly: true, sameSite: 'lax'}); //  secure: true, 
             res.status(201).json(createdUser);
         }
@@ -68,7 +61,7 @@ router.post('/signup', (req, res) => {
 
 // PATH: /api/user/profile
 // access: private
-router.get('/:id', authMiddleware, (req, res) => {
+router.get('/:id', Middlewares.authMiddleware, (req, res) => {
     // using arrow function callback
     User.findById(req.params.id, (err, resp) => {
         if (err){
@@ -78,5 +71,6 @@ router.get('/:id', authMiddleware, (req, res) => {
         }
     })
 });
+
 
 module.exports = router;
