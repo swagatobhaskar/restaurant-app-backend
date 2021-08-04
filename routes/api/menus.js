@@ -45,7 +45,7 @@ router.get('/', (req, res) => {
 });
 
 // @route POST api/menus
-// @access admin
+// @access admin/staff
 router.post('/', upload.single('photo'),(req, res, next) => {
     const photo = req.file && req.file.filename;
     const name = req.body.name;
@@ -62,7 +62,7 @@ router.post('/', upload.single('photo'),(req, res, next) => {
 });
 
 // @route PATCH api/menu/id
-// @access admin
+// @access admin/staff
 router.patch('/:id', (req, res, next) => {
   MenuItem.findByIdAndUpdate(req.params.id, req.body)
     .then(menuItem => res.json(menuItem))
@@ -70,7 +70,7 @@ router.patch('/:id', (req, res, next) => {
 });
 
 // @route DELETE api/menu/id
-// @access admin
+// @access admin/staff
 router.delete('/:id', (req, res, next) => {
   MenuItem.findByIdAndDelete(req.params.id)
     .then(menuItem => res.json({'message': 'Menu item deleted successfully!'}))

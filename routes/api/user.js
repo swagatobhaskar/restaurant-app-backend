@@ -61,7 +61,7 @@ router.post('/signup', (req, res) => {
 });
 
 // PATH: /api/user/profile
-// access: private
+// access: user
 router.get('/:id', (req, res) => {
     // using arrow function callback
     User.findById(req.params.id, (err, resp) => {
@@ -72,6 +72,5 @@ router.get('/:id', (req, res) => {
         }
     })
 });
-
 
 module.exports = router;
