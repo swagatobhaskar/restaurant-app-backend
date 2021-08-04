@@ -1,7 +1,7 @@
 const jwt = require('jsonwebtoken');
-const User = require('../models/users');
 const RefreshToken = require('../models/refreshToken');
 const { v4: uuidv4 } = require('uuid');
+const User = require('../models/users');
 
 const generateTokens = async (payload) => {
     const access = jwt.sign({payload}, process.env.SECRET_KEY, {
@@ -11,12 +11,15 @@ const generateTokens = async (payload) => {
     });
 
     let refresh = await RefreshToken.createToken(payload);
-    console.log("REF: ", refresh);
+    
     return token = { access, refresh };
 }
 
+
 const handleRefreshToken = async(req, res) => {
+    // get the refresh token from the cookies
     const refreshTokenCookie = req.cookies.refresh;
+    
     if (!refreshTokenCookie == null){
         try {
             let refreshToken = RefreshToken.findOne({token: refreshTokenCookie});
@@ -55,7 +58,10 @@ const handleRefreshToken = async(req, res) => {
         } catch(err) {
             return res.status(500).send({ message: err });
         }
+    } else {
+        return res.status(401).send('Refresh Token not Found');
     }
 }
+
 
 module.exports = { generateTokens, handleRefreshToken };

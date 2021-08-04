@@ -8,13 +8,10 @@ const utils = require('../../utils/jwtTokens');
 
 // PATH: /api/user/list
 // access: admin
-router.get('/list', Middlewares.authMiddleware, async(req, res) => {
-    try {
-        const users = await User.find();
-        res.json(users);
-    } catch (err) {
-        res.status(400).send("No user found");
-    }
+router.get('/list', (req, res) => {
+    User.find()
+        .then(users => res.json(users))
+        .catch (err => res.status(400).send("No user found"));
 });
 
 // PATH: /api/user/login
@@ -65,7 +62,7 @@ router.post('/signup', (req, res) => {
 
 // PATH: /api/user/profile
 // access: private
-router.get('/:id', Middlewares.authMiddleware, (req, res) => {
+router.get('/:id', (req, res) => {
     // using arrow function callback
     User.findById(req.params.id, (err, resp) => {
         if (err){

@@ -28,7 +28,7 @@ RefreshTokenSchema.statics.createToken = async function(user) {
     console.log("_object: ", _object);
 
     let refreshToken = await _object.save();
-    console.log("REFRESHTOKEN: ", refreshToken);
+    
     return refreshToken.token;
 }
 
