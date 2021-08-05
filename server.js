@@ -3,6 +3,9 @@ const cookieParser = require('cookie-parser')
 const connectMongoDB = require('./config/mongo-db');
 const cors = require('cors');
 
+// bind the authMiddleware as application-level middleware as it is used in every model
+const authJWTMiddleware = require('./utils/middlewares');
+
 const menuRoutes = require('./routes/api/menus');
 const userRoutes = require('./routes/api/user');
 
@@ -16,11 +19,16 @@ connectMongoDB();
 
 corsOrigin = ['http://127.0.0.1:3000/', 'http://127.0.0.1:4200']
 app.use(cors({ origin: true, credentials: true }));
+app.use(authJWTMiddleware);
 app.use(express.json({ extended: false }));
 
 app.get('/', (req, res) => res.send('Hello world!'));
 app.use('/api/menus', menuRoutes);
-app.use('/api/users', userRoutes);
+
+// use the router and 401 anything falling through
+app.use('/api/users', userRoutes, function (req, res) {
+    res.sendStatus(401)
+});
 
 app.listen(port, () => console.log(`Server running on port ${port}`));
 

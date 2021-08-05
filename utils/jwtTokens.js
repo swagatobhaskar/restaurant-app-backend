@@ -3,22 +3,28 @@ const RefreshToken = require('../models/refreshToken');
 const { v4: uuidv4 } = require('uuid');
 const User = require('../models/users');
 
-const generateTokens = async (payload) => {
+const generateAccessToken = (payload) => {
     const access = jwt.sign({payload}, process.env.SECRET_KEY, {
-        expiresIn: "1h",
+        expiresIn: 180, //"1h",
         jwtid: uuidv4(),    // required for refresh token as it points to one unique access token
-        subject: String(payload),
     });
+
+    return access;
+};
+
+const generateAccessRefreshTokens = async (payload) => {
+    const access = generateAccessToken(payload)
 
     let refresh = await RefreshToken.createToken(payload);
     
     return token = { access, refresh };
-}
+};
 
 
-const handleRefreshToken = async(req, res) => {
+const handleTokenRegeneration = async(req, res) => {
     // get the refresh token from the cookies
     const refreshTokenCookie = req.cookies.refresh;
+    console.log("Inside token regeneration");
     
     if (!refreshTokenCookie == null){
         try {
@@ -38,22 +44,23 @@ const handleRefreshToken = async(req, res) => {
                 return;
             }
 
-            let newAccessToken = jwt.sign({ id: refreshToken.user._id }, process.env.SECRET_KEY, {
-                expiresIn: "1h",
-                jwtid: uuidv4(),    // required for refresh token as it points to one unique access token
-                subject: user._id.toString()
-            });
+            let newAccessToken = generateAccessToken(refreshToken.user._id);
 
             const tokens = {
                 'access': newAccessToken,
                 'refresh': refreshToken.token
             };
 
-            return res.cookie('token', tokens, {
-                //maxAge: toDate(newAccessToken.expiresIn),
+            res.cookie('access', tokens.access, {
+                maxAge: 3*1000,
                 httpOnly: true,
                 sameSite: 'lax',
-            })
+            });
+            res.cookie('refresh', tokens.refresh, {
+                maxAge: 24*3600*1000,
+                httpOnly: true,
+                sameSite: 'lax',
+            });
 
         } catch(err) {
             return res.status(500).send({ message: err });
@@ -64,4 +71,7 @@ const handleRefreshToken = async(req, res) => {
 }
 
 
-module.exports = { generateTokens, handleRefreshToken };
+module.exports = {
+    generateAccessRefreshTokens,
+    handleTokenRegeneration
+};

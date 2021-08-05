@@ -1,16 +1,28 @@
-const { handleRefreshToken } = require('./jwtTokens');
+const { handleTokenRegeneration } = require('./jwtTokens');
 
-const authMiddleware = (req, res, next) => {
-    if (req.baseUrl === '/login') next();
-    console.log("URL: ", req.baseUrl);
+const excludedPaths = [
+    '/api/users/login/',
+    '/api/users/signup/',
+]
 
-    const token = req.cookies.token;
-    if (!token) return res.status(401).send("Access Denied");
+const authJWTMiddleware = (err, req, res, next) => {
+    console.log("PATH:: ",req.path);
+
+    //if (excludedPaths.includes(req.path)) {
+    //    console.log("URL found: ", req.path);
+    //    next();
+    //}
+
+    // if access token exists, verify it
+    // if it's invalid, generate a new one with the refresh token
+    // else pass on the request
+    const token = req.cookies.access;
+    if (!token) return res.status(401).send("Access Denied! Access token not found!!");
     
     jwt.verify(token, process.env.SECRET_KEY, (err, user) => {
         if (err) {
             //return res.sendStatus(403);
-            handleRefreshToken()
+            handleTokenRegeneration()
         }
         req.user = user;
         next();
@@ -18,4 +30,4 @@ const authMiddleware = (req, res, next) => {
 };
 
 
-module.exports = authMiddleware;
+module.exports = authJWTMiddleware;
