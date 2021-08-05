@@ -17,9 +17,9 @@ const port = process.env.PORT || 3000;
 
 connectMongoDB();
 
-corsOrigin = ['http://127.0.0.1:3000/', 'http://127.0.0.1:4200']
-app.use(cors({ origin: true, credentials: true }));
 app.use(authJWTMiddleware);
+app.use(cors({ origin: true, credentials: true }));
+
 app.use(express.json({ extended: false }));
 
 app.get('/', (req, res) => res.send('Hello world!'));
