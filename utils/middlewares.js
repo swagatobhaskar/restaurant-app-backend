@@ -1,84 +1,67 @@
 const jwt = require('jsonwebtoken');
-const RefreshToken = require('../models/refreshToken');
-const { generateAccessToken } = require('./jwtTokens');
+const { v4: uuidv4 } = require('uuid');
+
+const { generateAccessToken, generateRefreshToken } = require('./jwtGen');
 
 const excludedPaths = [
     '/api/users/login/',
     '/api/users/signup/',
 ]
 
-module.exports = function authJWTMiddleware(err, req, res, next) {
+function authJWTMiddleware(req, res, next) {
 
     if (excludedPaths.includes(req.path)) {
         console.log("URL found: ", req.path);
         next();
+    } else {
+
+        const accessToken = req.cookies.access;
+        const refreshToken = req.cookies.refresh;
+        console.log("access, refresh in cookie:", accessToken," ", refreshToken);
+
+        if (!accessToken) return res.status(401).send("Access token not found!!");
+
+        jwt.verify(accessToken, process.env.ACCESS_SECRET_KEY, (err, user) => {
+            if (err) {
+                console.log("Access token expired! generating new access");
+                const newToken = renewAccessToken(refreshToken);
+                console.log("New token: ",newToken);
+            }
+            // in django request.META['HTTP_AUTHORIZATION'] = f'Bearer {access_token}'
+            req.user = user;
+            next();
+        });
     }
-
-    // if access token exists, verify it
-    // if it's invalid, generate a new one with the refresh token
-    // else pass on the request
-    const token = req.cookies? access: null;
-    console.log("access in cookie:", token);
-
-    if (!token) return res.status(401).send("Access Denied! Access token not found!!");
-    
-    jwt.verify(token, process.env.SECRET_KEY, (err, user) => {
-        if (err) {
-            console.log("Access token verified");
-            //return res.sendStatus(403);
-            const newTokens = handleTokenRegeneration();
-            console.log("New tokens: ",newTokens);
-        }
-        req.user = user;
-        next();
-    });
 };
 
-const handleTokenRegeneration = (req, res) => {
-    // get the refresh token from the cookies
-    const refreshTokenCookie = req.cookies.refresh;
-    console.log("Inside token regeneration ", refreshTokenCookie);
-    
-    if (!refreshTokenCookie == null){
-        try {
-            let refreshToken = RefreshToken.findOne({token: refreshTokenCookie});
-
-            if (!refreshToken){
-                res.status(403).json({ message: "Refresh token is not in database!" });
-                return;
-            }
-
-            if (RefreshToken.verifyExpiration(refreshToken)) {
-                RefreshToken.findByIdAndRemove(refreshToken._id, { useFindAndModify: false }).exec();
-                
-                res.status(403).json({
-                    message: "Refresh token was expired. Please make a new signin request",
-                  });
-                return;
-            }
-
-            let newAccessToken = generateAccessToken(refreshToken.user._id);
-
-            return tokens = {
-                'access': newAccessToken,
-                'refresh': refreshToken.token
-            };
-            /*
-            res.cookie('access', tokens.access, {
-                maxAge: 3*1000,
-                httpOnly: true,
-                sameSite: 'lax',
-            });
-            res.cookie('refresh', tokens.refresh, {
-                maxAge: 24*3600*1000,
-                httpOnly: true,
-                sameSite: 'lax',
-            });
-            */
-        } catch(err) {
-            return res.status(500).send({ message: err });
-        }
-    } else {
-        return res.status(401).send('Refresh Token not Found');
+function renewAccessToken(refreshToken, payload) {
+    if (!refreshToken) return res.status(401).send("Refresh token not found!!");
+    try{
+        jwt.verify(refreshToken, process.env.REFRESH_SECRET_KEY);
+        const newAccess = generateAccessToken(payload);
+        return newAccess;
+        
+    } catch (TokenExpiredError) {
+        console.log("REFRESH expired");
     }
 }
+
+module.exports = authJWTMiddleware;
+
+/*
+except jwt.ExpiredSignatureError:
+                refresh_cookie = request.COOKIES['refresh']
+                data = {"refresh": refresh_cookie}
+
+                if settings.DEBUG:
+                    url = 'http://127.0.0.1:8000/api/auth/refresh/'
+                else:
+                    scheme = request.is_secure() and "https" or "http"
+                    url = scheme + "://" + request.get_host() + "api/auth/refresh/"
+                resp = requests.post(url, data=data)
+
+                #access_dict_as_string = resp.content.decode("utf-8")
+                access_token_string = json.loads(resp.text)["access"]
+                request.META['HTTP_AUTHORIZATION'] = f'Bearer {access_token_string}'
+                return self.get_response(request)
+*/

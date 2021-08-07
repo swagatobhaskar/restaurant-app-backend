@@ -5,22 +5,21 @@ const cors = require('cors');
 
 // bind the authMiddleware as application-level middleware as it is used in every model
 const authJWTMiddleware = require('./utils/middlewares');
-
 const menuRoutes = require('./routes/api/menus');
 const userRoutes = require('./routes/api/user');
 
 require('dotenv').config();
 
 const app = express()
-app.use(cookieParser())
+app.use(cookieParser());
+app.use(express.json({ extended: false }));
 const port = process.env.PORT || 3000;
 
 connectMongoDB();
 
 app.use(authJWTMiddleware);
-app.use(cors({ origin: true, credentials: true }));
 
-app.use(express.json({ extended: false }));
+app.use(cors({ origin: true, credentials: true }));
 
 app.get('/', (req, res) => res.send('Hello world!'));
 app.use('/api/menus', menuRoutes);
