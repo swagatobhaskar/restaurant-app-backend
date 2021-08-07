@@ -5,11 +5,13 @@ const { renewAccessToken } = require('./jwtGen');
 const excludedPaths = [
     '/api/users/login/',
     '/api/users/signup/',
+    '/api/users/signup',
+    '/api/roles/',
 ]
 
-async function authJWTMiddleware(req, res, next) {
-    
+function authJWTMiddleware(req, res, next) {
     if (excludedPaths.includes(req.path)) {
+        console.log(req.path);
         next();
 
     } else {
@@ -21,13 +23,10 @@ async function authJWTMiddleware(req, res, next) {
 
         jwt.verify(accessToken, process.env.ACCESS_SECRET_KEY, (err, user) => {
             if (err) {
-                console.log("Access token expired! generating new access");
                 const newAccessToken = renewAccessToken(refreshToken);
-                console.log("new access token: ",newAccessToken);
                 // add this new access token to the request cookie
                 res.cookie('access', newAccessToken, {maxAge: 3600*1000, httpOnly: true, sameSite: 'lax'}) // secure: true, 
             }
-            
             req.user = user;
             next();
         });

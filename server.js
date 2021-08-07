@@ -7,6 +7,7 @@ const cors = require('cors');
 const authJWTMiddleware = require('./utils/middlewares');
 const menuRoutes = require('./routes/api/menus');
 const userRoutes = require('./routes/api/user');
+const roleRoutes = require('./routes/api/roles');
 
 require('dotenv').config();
 
@@ -28,6 +29,8 @@ app.use('/api/menus', menuRoutes);
 app.use('/api/users', userRoutes, function (req, res) {
     res.sendStatus(401)
 });
+
+app.use('/api/roles', roleRoutes);
 
 app.listen(port, () => console.log(`Server running on port ${port}`));
 
