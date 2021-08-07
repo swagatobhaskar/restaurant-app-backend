@@ -4,7 +4,7 @@ const router = express.Router()
 const jwt = require('jsonwebtoken');
 
 const User = require('../../models/users');
-const utils = require('../../utils/middlewares');
+const utils = require('../../utils/jwtGen');
 
 // PATH: /api/user/list
 // access: admin
@@ -22,11 +22,12 @@ router.post('/login', async(req, res) => {
         if (user) {
             user.comparePassword(req.body.password, async function(err, isMatch) {
                 if (err) throw err;
-                // let tokens = await utils.generateAccessRefreshTokens(user._id);
-                // console.log("Tokens:: ", tokens);
-                // res.cookie('access', tokens.access, {maxAge: 3600*1000, httpOnly: true, sameSite: 'lax'}) // secure: true
-                // res.cookie('refresh', tokens.refresh, {maxAge: 24*3600*1000, httpOnly: true, sameSite: 'lax'}) // secure: true, 
-                // res.status(200).json(user) //({user: user});
+                let accessToken = utils.generateAccessToken(user._id);
+                let refreshToken = utils.generateRefreshToken(user._id);
+                console.log("Tokens in login response:: ", accessToken, refreshToken);
+                res.cookie('access', accessToken, {maxAge: 3600*1000, httpOnly: true, sameSite: 'lax'}) // secure: true
+                res.cookie('refresh', refreshToken, {maxAge: 24*3600*1000, httpOnly: true, sameSite: 'lax'}) // secure: true, 
+                res.status(200).json(user) //({user: user});
             });
         } else {
             res.status(404).send("User not found!")
@@ -44,13 +45,14 @@ router.post('/signup', (req, res) => {
 
     newUser.save((err, createdUser) => {
         if (err) {
-            //console.log(err);
             res.status(400).json({'message': 'Some error occured!'});
         } else {
-            // const token = utils.generateAccessRefreshTokens(createdUser._id);
-            // res.cookie('access', token.access, {maxAge: 3600*1000, httpOnly: true, sameSite: 'lax'}); //  secure: true, 
-            // res.cookie('refresh', token.refresh, {maxAge: 24*3600*1000, httpOnly: true, sameSite: 'lax'});
-            // res.status(201).json(createdUser);
+            let accessToken = utils.generateAccessToken(createdUser._id);
+            let refreshToken = utils.generateRefreshToken(createdUser._id);
+            console.log("Tokens in login response:: ", accessToken, refreshToken);
+            res.cookie('access', accessToken, {maxAge: 3600*1000, httpOnly: true, sameSite: 'lax'}); //  secure: true, 
+            res.cookie('refresh', refreshToken, {maxAge: 24*3600*1000, httpOnly: true, sameSite: 'lax'});
+            res.status(201).json(createdUser);
         }
     })
 });
