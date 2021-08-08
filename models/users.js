@@ -38,9 +38,11 @@ const UserSchema = new mongoose.Schema({
         maxLength: 32
     },
     role: {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: "Role"
-    }
+        type: String,
+        default: "user",
+        required: true,
+        enum: ["user", "staff", "admin"]
+    },
 },
 {
   strict: true,     // ?

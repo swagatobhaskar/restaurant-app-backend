@@ -24,8 +24,11 @@ function renewAccessToken(refreshToken) {
     if (!refreshToken) return res.status(401).send("Refresh token not found!!");
     try{
         const decodedRefreshToken = jwt.verify(refreshToken, process.env.REFRESH_SECRET_KEY);
-        console.log("decodedRefreshToken: ", decodedRefreshToken);
-        const newAccess = generateAccessToken(decodedRefreshToken.userId);
+        const payload = {
+            id: decodedRefreshToken.userId,
+            role: decodedRefreshToken.role
+        };
+        const newAccess = generateAccessToken(payload);
         return newAccess;
         
     } catch (TokenExpiredError) {

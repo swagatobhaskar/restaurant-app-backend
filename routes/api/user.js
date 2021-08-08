@@ -2,7 +2,6 @@ const { config } = require('dotenv');
 const express = require('express')
 const router = express.Router()
 
-const Role = require('../../models/role');
 const User = require('../../models/users');
 const utils = require('../../utils/jwtGen');
 
@@ -44,13 +43,10 @@ router.post('/login', (req, res) => {
 // access: public
 router.post('/signup', (req, res) => {
 
-    let role = Role.find({role: "user"})
-
     let newUser = new User({
         email: req.body.email,
         password: req.body.password,
-        //role: req.body.role || "user" 
-        role: req.body.role ? req.body.role : role._id 
+        role: req.body.role || "user"
     });
 
     newUser.save((err, createdUser) => {
