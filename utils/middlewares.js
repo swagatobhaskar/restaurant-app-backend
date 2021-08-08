@@ -6,12 +6,11 @@ const excludedPaths = [
     '/api/users/login/',
     '/api/users/signup/',
     '/api/users/signup',
-    '/api/roles/',
 ]
 
 function authJWTMiddleware(req, res, next) {
     if (excludedPaths.includes(req.path)) {
-        console.log(req.path);
+        //console.log(req.path);
         next();
 
     } else {
@@ -24,13 +23,22 @@ function authJWTMiddleware(req, res, next) {
         jwt.verify(accessToken, process.env.ACCESS_SECRET_KEY, (err, user) => {
             if (err) {
                 const newAccessToken = renewAccessToken(refreshToken);
-                // add this new access token to the request cookie
-                res.cookie('access', newAccessToken, {maxAge: 3600*1000, httpOnly: true, sameSite: 'lax'}) // secure: true, 
+                req.user = newAccessToken.user;
+                req.role = newAccessToken.role;
+                // add this new access token to the request header access cookie
+                res.cookie('access', newAccessToken.newAccess, {maxAge: 3600*1000, httpOnly: true, sameSite: 'lax'}) // secure: true,
+                next();
             }
-            req.user = user;
-            next();
+            else {
+                req.user = user.userId;
+                req.role = user.role;
+                next();
+            }
         });
     }
 };
 
-module.exports = authJWTMiddleware;
+
+module.exports = {
+    authJWTMiddleware
+}

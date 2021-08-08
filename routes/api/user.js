@@ -8,9 +8,13 @@ const utils = require('../../utils/jwtGen');
 // PATH: /api/user/list
 // access: admin
 router.get('/list', (req, res) => {
-    User.find()
-        .then(users => res.json(users))
-        .catch (err => res.status(400).send("No user found"));
+    if (req.role !== 'admin'){
+        res.status(401).json({'message': 'You\'re not authorized!'});
+    } else {
+        User.find()
+            .then(users => res.json(users))
+            .catch (err => res.status(400).send("No user found"));
+    }
 });
 
 // PATH: /api/user/login
@@ -75,6 +79,18 @@ router.get('/:id', (req, res) => {
             res.status(400).json({"message": "some error occured!"});
         } else {
             res.json(resp);
+        }
+    })
+});
+
+// DELETE: /api/user/:id
+// access: admin
+router.get('/:id', (req, res) => {
+    User.findByIdAndDelete(req.params.id, (err, resp) => {
+        if (err){
+            res.status(400).json({"message": "some error occured!"});
+        } else {
+            res.status(200).json({"message": "User deleted!"});
         }
     })
 });

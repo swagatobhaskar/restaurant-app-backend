@@ -4,9 +4,10 @@ const connectMongoDB = require('./config/mongo-db');
 const cors = require('cors');
 
 // bind the authMiddleware as application-level middleware as it is used in every model
-const authJWTMiddleware = require('./utils/middlewares');
+const Middleware = require('./utils/middlewares');
 const menuRoutes = require('./routes/api/menus');
 const userRoutes = require('./routes/api/user');
+const orderRoutes = require('./routes/api/order');
 
 require('dotenv').config();
 
@@ -17,7 +18,7 @@ const port = process.env.PORT || 3000;
 
 connectMongoDB();
 
-app.use(authJWTMiddleware);
+app.use(Middleware.authJWTMiddleware);
 
 app.use(cors({ origin: true, credentials: true }));
 
@@ -28,6 +29,8 @@ app.use('/api/menus', menuRoutes);
 app.use('/api/users', userRoutes, function (req, res) {
     res.sendStatus(401)
 });
+
+app.use('/api/order', orderRoutes);
 
 app.listen(port, () => console.log(`Server running on port ${port}`));
 

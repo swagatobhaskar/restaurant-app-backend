@@ -57,7 +57,7 @@ router.post('/', upload.single('photo'),(req, res, next) => {
     const newMenuItemData = {name, price, category, weight, ingredients, photo}
     const newMenuItem = new MenuItem(newMenuItemData);
     newMenuItem.save()
-        .then(menuItem => res.json({'message': 'Item added!'}))
+        .then(menuItem => res.json(menuItem))
         .catch(err => res.status(400).json('Error: ' + err));
 });
 

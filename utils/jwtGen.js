@@ -24,12 +24,18 @@ function renewAccessToken(refreshToken) {
     if (!refreshToken) return res.status(401).send("Refresh token not found!!");
     try{
         const decodedRefreshToken = jwt.verify(refreshToken, process.env.REFRESH_SECRET_KEY);
+        const user = decodedRefreshToken.userId;
+        const role = decodedRefreshToken.role;
         const payload = {
-            id: decodedRefreshToken.userId,
-            role: decodedRefreshToken.role
+            id: user,
+            role: role
         };
-        const newAccess = generateAccessToken(payload);
-        return newAccess;
+        const access = generateAccessToken(payload);
+        return val = {
+            newAccess: access,
+            user: user,
+            role: role
+        };
         
     } catch (TokenExpiredError) {
         console.log("REFRESH expired");
