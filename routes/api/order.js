@@ -11,6 +11,14 @@ router.get('/history', (req, res) => {
         .catch(err => console.log(err));
 });
 
+// GET: /api/order/:id
+// access: user
+router.get('/:id', (req, res) => {
+    Order.findById(req.params.id)
+        .then(order => res.status(200).json(order))
+        .catch(err => console.log(err));
+});
+
 
 // POST: /api/order/
 // access: user

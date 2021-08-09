@@ -71,7 +71,7 @@ router.post('/signup', (req, res) => {
     })
 });
 
-// PATH: /api/user/profile
+// GET: /api/user/:id
 // access: user
 router.get('/:id', (req, res) => {
     User.findById(req.params.id, (err, resp) => {
@@ -83,9 +83,21 @@ router.get('/:id', (req, res) => {
     })
 });
 
+// PATCH: /api/user/:id
+// access: user
+router.patch('/:id', (req, res) => {
+    User.findByIdAndUpdate(req.params.id, req.body, (err, resp) => {
+        if (err){
+            res.status(400).json({"message": "some error occured!"});
+        } else {
+            res.status(200).json(resp);
+        }
+    })
+});
+
 // DELETE: /api/user/:id
 // access: admin
-router.get('/:id', (req, res) => {
+router.delete('/:id', (req, res) => {
     User.findByIdAndDelete(req.params.id, (err, resp) => {
         if (err){
             res.status(400).json({"message": "some error occured!"});

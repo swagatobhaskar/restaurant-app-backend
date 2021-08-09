@@ -6,6 +6,8 @@ const excludedPaths = [
     '/api/users/login/',
     '/api/users/signup/',
     '/api/users/signup',
+    '/api/menus/',
+    '/api/menus',
 ]
 
 function authJWTMiddleware(req, res, next) {
