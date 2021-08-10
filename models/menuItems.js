@@ -13,11 +13,7 @@ const menuItemSchema = new mongoose.Schema({
         enum: ['veg', 'non-veg']
     },
     weight: Number,
-    photo: {
-        data: Buffer,
-        contentType: String,
-        required: false
-    },
+    photo: String,
     ingredients: [String],
     status: {
         type: String,
@@ -32,3 +28,11 @@ const menuItemSchema = new mongoose.Schema({
 const MenuItem = mongoose.model('MenuItem', menuItemSchema);
 
 module.exports = MenuItem;
+
+/**
+     photo: {
+        data: Buffer,
+        contentType: String,
+        required: false
+    },
+ */

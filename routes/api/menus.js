@@ -1,29 +1,44 @@
 const express = require('express');
 const router = express.Router();
-const fs = require('fs');
-const path = require('path');
 const multer = require('multer');
-const bodyParser = require('body-parser');
 const { GridFsStorage } = require('multer-gridfs-storage')
+const mongoose = require('mongoose');
+const Grid = require('gridfs-stream');
+const crypto = require('crypto');
+const path = require('path');
 
 const MenuItem = require('../../models/menuItems');
-const connectMongoDB = require('../../config/mongo-db');
 
-const storage = new GridFsStorage({ db: connectMongoDB(),
 
-  //url: process.env.mongoURI,
-   file: (req, file) => {
-     return new Promise(
-       (resolve, reject) => {
-         const fileInfo = {
-           filename: file.originalname,
-           bucketName: "menuItems"
-         }
-         resolve(fileInfo)
-       }
-     )
-   }  
-  });
+const mongoURI = process.env.mongoURI;
+const promise = mongoose.connect(mongoURI, { useNewUrlParser: true, useUnifiedTopology: true, useCreateIndex: true });
+const conn = mongoose.connection;
+let gfs;
+
+conn.once('open', () => {
+  gfs = Grid(conn, mongoose.mongo);
+  gfs.collection('uploads');
+});
+
+//create storage object
+const storage = new GridFsStorage({
+  db: promise,
+  file: (req, file) => {
+    return new Promise((resolve, reject) => {
+      crypto.randomBytes(16, (err, buf) => {
+        if (err) {
+          return reject(err);
+        }
+        const filename = buf.toString('hex') + path.extname(file.originalname);
+        const fileInfo = {
+          filename: filename,
+          bucketName: 'uploads'
+        };
+        resolve(fileInfo);
+      });
+    });
+  }
+});
 
 const upload = multer({ storage });
 
@@ -31,7 +46,7 @@ const upload = multer({ storage });
 // @access Public
 router.get('/', (req, res) => {
     MenuItem.find()
-        .then(items => res.json(items))
+        .then(items => res.json({items, file: res.file}))
         .catch(err =>  res.status(400).json({'message': 'No items found!'}));
 });
 
@@ -39,7 +54,7 @@ router.get('/', (req, res) => {
 // @access admin/staff
 router.post('/', upload.single('photo'), (req, res, next) => {
 
-  if (req.role !== 'staff') {
+  if (req.role !== 'staff' || req.role !== 'admin') {
     res.status(401).send('You are not authorized to make changes!');
   }
   //const photo = req.file && req.file.filename;
@@ -47,9 +62,9 @@ router.post('/', upload.single('photo'), (req, res, next) => {
   const price = req.body.price;
   const category = req.body.category;
   const weight = req.body.weight;
-  const ingredients = req.body.ingredients
-    
-  const newMenuItemData = {name, price, category, weight, ingredients}
+  const ingredients = req.body.ingredients;
+  const photo = req.file;
+  const newMenuItemData = {name, price, category, weight, ingredients, photo}
   const newMenuItem = new MenuItem(newMenuItemData);
 
   newMenuItem.save()
