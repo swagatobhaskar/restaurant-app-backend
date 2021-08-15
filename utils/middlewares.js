@@ -5,9 +5,7 @@ const { renewAccessToken } = require('./jwtGen');
 const excludedPaths = [
     '/api/users/login/',
     '/api/users/signup/',
-    '/api/users/signup',
-    '/api/menus/',
-    '/api/menus',
+    '/api/users/signup'
 ]
 
 function authJWTMiddleware(req, res, next) {

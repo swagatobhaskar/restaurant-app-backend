@@ -1,46 +1,32 @@
 const express = require('express');
 const router = express.Router();
 const multer = require('multer');
-const { GridFsStorage } = require('multer-gridfs-storage')
-const mongoose = require('mongoose');
-const Grid = require('gridfs-stream');
-const crypto = require('crypto');
-const path = require('path');
 
 const MenuItem = require('../../models/menuItems');
 
-
-const mongoURI = process.env.mongoURI;
-const promise = mongoose.connect(mongoURI, { useNewUrlParser: true, useUnifiedTopology: true, useCreateIndex: true });
-const conn = mongoose.connection;
-let gfs;
-
-conn.once('open', () => {
-  gfs = Grid(conn, mongoose.mongo);
-  gfs.collection('uploads');
-});
-
-//create storage object
-const storage = new GridFsStorage({
-  db: promise,
-  file: (req, file) => {
-    return new Promise((resolve, reject) => {
-      crypto.randomBytes(16, (err, buf) => {
-        if (err) {
-          return reject(err);
-        }
-        const filename = buf.toString('hex') + path.extname(file.originalname);
-        const fileInfo = {
-          filename: filename,
-          bucketName: 'uploads'
-        };
-        resolve(fileInfo);
-      });
-    });
+const upload = multer({
+  storage: multer.diskStorage({
+    destination(req, file, cb){
+      cb(null, './files');
+    },
+    filename(req, file, cb){
+      cb(null, `${new Date().getTime()}_${file.originalname}`);
+    }
+  }),
+  limits: {
+    fileSize: 2000000 // 2 MB = 2000000 bytes
+  },
+  fileFilter(req, file, cb){
+    if (!file.originalname.match(/\.(jpeg|jpg|png)$/)) {
+      return cb(
+        new Error(
+          'only upload files with jpg, jpeg, png format.'
+        )
+      );
+    }
+    cb(undefined, true); // continue with upload
   }
 });
-
-const upload = multer({ storage });
 
 // @route GET api/menus
 // @access Public
@@ -52,22 +38,26 @@ router.get('/', (req, res) => {
 
 // @route POST api/menus
 // @access admin/staff
-router.post('/', upload.single('photo'), (req, res, next) => {
-
-  if (req.role !== 'staff' || req.role !== 'admin') {
+router.post('/', upload.single('photo'), (req, res) => {
+  
+  if (req.role !== 'admin' || req.role !== 'staff') {
     res.status(401).send('You are not authorized to make changes!');
   }
-  //const photo = req.file && req.file.filename;
+  
   const name = req.body.name;
   const price = req.body.price;
   const category = req.body.category;
   const weight = req.body.weight;
   const ingredients = req.body.ingredients;
-  const photo = req.file;
-  const newMenuItemData = {name, price, category, weight, ingredients, photo}
-  const newMenuItem = new MenuItem(newMenuItemData);
+  const photo = req.file.filename;
 
-  newMenuItem.save()
+  const newMenuData = {
+    name, price, category, weight, ingredients, photo
+  }
+
+  const newMenu = new MenuItem(newMenuData)
+
+  newMenu.save()
     .then(menuItem => res.json(menuItem))
     .catch(err => res.status(400).json('Error: ' + err));
 });
