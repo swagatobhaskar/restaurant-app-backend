@@ -32,7 +32,7 @@ app.use('/api/users', userRoutes, function (req, res) {
 
 app.use('/api/order', orderRoutes);
 
-app.listen(port, () => console.log(`Server running on port ${port}`));
+app.listen(port, () => console.log(`Server is listening on port ${port}`));
 
  // The module “body-parser” enables reading (parsing) HTTP-POST data.
  // Dotenv is a zero-dependency module that loads environment variables from a .env file into process.env.

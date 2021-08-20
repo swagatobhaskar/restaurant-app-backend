@@ -4,29 +4,51 @@ const multer = require('multer');
 
 const MenuItem = require('../../models/menuItems');
 
-const upload = multer({
-  storage: multer.diskStorage({
-    destination(req, file, cb){
-      cb(null, './files');
-    },
-    filename(req, file, cb){
-      cb(null, `${new Date().getTime()}_${file.originalname}`);
-    }
-  }),
-  limits: {
-    fileSize: 2000000 // 2 MB = 2000000 bytes
-  },
-  fileFilter(req, file, cb){
-    if (!file.originalname.match(/\.(jpeg|jpg|png)$/)) {
-      return cb(
-        new Error(
-          'only upload files with jpg, jpeg, png format.'
-        )
-      );
-    }
-    cb(undefined, true); // continue with upload
-  }
+const { GridFsStorage } = require('multer-gridfs-storage');
+const Grid = require('gridfs-stream');
+const mongoose = require('mongoose');
+const path = require('path');
+const crypto = require('crypto');
+
+const URI = process.env.mongoURI;
+
+const options = {
+    useNewUrlParser: true,
+    useUnifiedTopology: true
+};
+
+const con = mongoose.createConnection(URI, options);
+
+// Init gfs
+let gfs;
+
+con.once('open', () => {
+    // Init stream
+    gfs = Grid(con.db, mongoose.mongo);
+    gfs.collection('uploads');
 });
+
+// create storage engine
+const storage = new GridFsStorage({
+    url: URI,
+    file: (req, file) => {
+        return new Promise((resolve, reject) => {
+            crypto.randomBytes(16, (err, buf) => {
+                if (err) {
+                    return reject(err);
+                }
+                const filename = buf.toString('hex') + path.extname(file.originalname);
+                const fileInfo = {
+                    filename: filename,
+                    bucketName: 'uploads'
+                };
+                resolve(fileInfo);
+            });
+        });
+    }
+});
+
+const upload = multer({ storage });
 
 // @route GET api/menus
 // @access Public
@@ -49,7 +71,7 @@ router.post('/', upload.single('photo'), (req, res) => {
   const category = req.body.category;
   const weight = req.body.weight;
   const ingredients = req.body.ingredients;
-  const photo = req.file.filename;
+  const photo = req.file.path; // only works with multer
 
   const newMenuData = {
     name, price, category, weight, ingredients, photo
@@ -94,31 +116,26 @@ router.get('/:id', (req, res) => {
 module.exports = router;
 
 
-
-// const storage = multer.diskStorage({
-//   destination: function (req, file, cb) {
-//     cb(null, 'images/menuItem')
+// const upload = multer({
+//   storage: multer.diskStorage({
+//     destination(req, file, cb){
+//       cb(null, './files');
+//     },
+//     filename(req, file, cb){
+//       cb(null, `${new Date().getTime()}_${file.originalname}`);
+//     }
+//   }),
+//   limits: {
+//     fileSize: 2000000 // 2 MB = 2000000 bytes
 //   },
-//   filename: function (req, file, cb) {
-//     const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9)
-//     cb(null, file.fieldname + '-' + uniqueSuffix + '.jpg')
+//   fileFilter(req, file, cb){
+//     if (!file.originalname.match(/\.(jpeg|jpg|png)$/)) {
+//       return cb(
+//         new Error(
+//           'only upload files with jpg, jpeg, png format.'
+//         )
+//       );
+//     }
+//     cb(undefined, true); // continue with upload
 //   }
 // });
-
-
-// // Set this to a function to control which files should be uploaded and which should be skipped
-// const fileFilter = (req, file, cb) => {
-// // The function should call `cb` with a boolean
-// // to indicate if the file should be accepted
-
-// const allowedFileTypes = ['image/jpeg', 'image/jpg', 'image/png'];
-// if(allowedFileTypes.includes(file.mimetype)) {
-//   // To accept the file pass `true`, like so:
-//   cb(null, true);
-// } else {
-//   // To reject this file pass `false`, like so:
-//   cb(null, false);
-// }
-// }
-
-// const upload = multer({ storage, fileFilter })
