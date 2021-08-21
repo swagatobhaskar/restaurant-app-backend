@@ -12,6 +12,8 @@ const crypto = require('crypto');
 
 const URI = process.env.mongoURI;
 
+const authorisedRoles = ['admin', 'staff'];
+
 const options = {
     useNewUrlParser: true,
     useUnifiedTopology: true
@@ -22,7 +24,7 @@ const con = mongoose.createConnection(URI, options);
 // Init gfs
 let gfs;
 
-con.once('open', () => {
+con.once("open", () => {
     // Init stream
     gfs = Grid(con.db, mongoose.mongo);
     gfs.collection('uploads');
@@ -61,17 +63,21 @@ router.get('/', (req, res) => {
 // @route POST api/menus
 // @access admin/staff
 router.post('/', upload.single('photo'), (req, res) => {
-  
-  if (req.role !== 'admin' || req.role !== 'staff') {
-    res.status(401).send('You are not authorized to make changes!');
+
+  if (!req.role in authorisedRoles) {
+    res.status(401).send('You are not authorized to add menu items!');
   }
   
+  if (!req.file) {
+    res.status(400).send("Menu item photo is required");
+  }
+
   const name = req.body.name;
   const price = req.body.price;
   const category = req.body.category;
   const weight = req.body.weight;
   const ingredients = req.body.ingredients;
-  const photo = req.file.path; // only works with multer
+  const photo = req.file.filename;
 
   const newMenuData = {
     name, price, category, weight, ingredients, photo
@@ -88,8 +94,12 @@ router.post('/', upload.single('photo'), (req, res) => {
 // @access admin/staff
 router.patch('/:id', upload.single('photo'), (req, res, next) => {
   
-  if (req.role !== 'staff') {
+  if (!req.role in authorisedRoles) {
     res.status(401).send('You are not authorized to make changes!');
+  }
+
+  if (req.file) {
+    //remove old photo and save new photo
   }
 
   MenuItem.findByIdAndUpdate(req.params.id, req.body)
@@ -108,34 +118,20 @@ router.delete('/:id', (req, res, next) => {
 // @route GET api/menu/id
 // @access public
 router.get('/:id', (req, res) => {
-  MenuItem.findById(req.params.id)
-    .then(menuItem => res.json(menuItem))
-    .catch(err => res.status(400).json({'message': 'Something went wrong!'}));
+  // get the image through gfs
+  const query = MenuItem.findById(req.params.id)
+  const file = gfs.files.find({filename: query.photo})
+    .toArray(function (err, files) {
+      if (err) throw err;
+      return files;
+    })
+  const resp = {
+       "name": query.name, "price": query.price, "weight": query.weight, "ingredients": query.ingredients,
+       "category": query.ingredients, "photo": file
+   };
+  return res.status(200).send({resp});
+    //.then(menuItem => res.json(menuItem))
+    //.catch(err => res.status(400).json({'message': 'Something went wrong!'}));
 });
 
 module.exports = router;
-
-
-// const upload = multer({
-//   storage: multer.diskStorage({
-//     destination(req, file, cb){
-//       cb(null, './files');
-//     },
-//     filename(req, file, cb){
-//       cb(null, `${new Date().getTime()}_${file.originalname}`);
-//     }
-//   }),
-//   limits: {
-//     fileSize: 2000000 // 2 MB = 2000000 bytes
-//   },
-//   fileFilter(req, file, cb){
-//     if (!file.originalname.match(/\.(jpeg|jpg|png)$/)) {
-//       return cb(
-//         new Error(
-//           'only upload files with jpg, jpeg, png format.'
-//         )
-//       );
-//     }
-//     cb(undefined, true); // continue with upload
-//   }
-// });
