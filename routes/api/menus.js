@@ -1,14 +1,14 @@
 const express = require('express');
 const router = express.Router();
 const multer = require('multer');
-
-const MenuItem = require('../../models/menuItems');
-
 const { GridFsStorage } = require('multer-gridfs-storage');
 const Grid = require('gridfs-stream');
 const mongoose = require('mongoose');
 const path = require('path');
 const crypto = require('crypto');
+
+
+const MenuItem = require('../../models/menuItems');
 
 const URI = process.env.mongoURI;
 
@@ -19,14 +19,13 @@ const options = {
     useUnifiedTopology: true
 };
 
-const con = mongoose.createConnection(URI, options);
+const conn = mongoose.createConnection(URI, options);
 
 // Init gfs
 let gfs;
 
-con.once("open", () => {
-    // Init stream
-    gfs = Grid(con.db, mongoose.mongo);
+conn.once('open', () => {
+    gfs = Grid(conn.db, mongoose.mongo);
     gfs.collection('uploads');
 });
 
@@ -55,9 +54,23 @@ const upload = multer({ storage });
 // @route GET api/menus
 // @access Public
 router.get('/', (req, res) => {
-    MenuItem.find()
-        .then(items => res.json({items, file: res.file}))
-        .catch(err =>  res.status(400).json({'message': 'No items found!'}));
+  MenuItem.find()
+    .then(items => res.json({items, file: res.file}))
+    .catch(err =>  res.status(400).json({'message': 'No items found!'}));
+});
+
+// @route GET api/menus/:filename
+// @access Public
+router.get('/:filename/image', (req, res) => {
+  gfs.files.find({filename: req.params.filename}).toArray((err, file) => {
+    if ( !file || file.length === 0 ) {
+      return res.status(404).json({
+        err: 'No files exist'
+      });
+    }
+    // Files exist
+    return res.json(files);
+  });
 });
 
 // @route POST api/menus
@@ -118,18 +131,24 @@ router.delete('/:id', (req, res, next) => {
 // @route GET api/menu/id
 // @access public
 router.get('/:id', (req, res) => {
-  // get the image through gfs
-  const query = MenuItem.findById(req.params.id)
-  const file = gfs.files.find({filename: query.photo})
-    .toArray(function (err, files) {
-      if (err) throw err;
-      return files;
-    })
-  const resp = {
-       "name": query.name, "price": query.price, "weight": query.weight, "ingredients": query.ingredients,
-       "category": query.ingredients, "photo": file
-   };
-  return res.status(200).send({resp});
+  const query = MenuItem.findById(req.params.id);
+  console.log("QUERY: ", query, query.photo);
+  const file = gfs.files.find({filename: query.photo}).toArray((err, file) => {
+    if ( !file || file.length === 0 ) {
+      return res.status(404).json({
+        err: 'No files exist'
+      });
+    }
+    // Files exist
+    return res.json(files);
+  });
+  return res.json(file);
+  
+  // const resp = {
+  //      "name": query.name, "price": query.price, "weight": query.weight, "ingredients": query.ingredients,
+  //      "category": query.ingredients, "photo": file
+  //  };
+  // return res.status(200).send({resp});
     //.then(menuItem => res.json(menuItem))
     //.catch(err => res.status(400).json({'message': 'Something went wrong!'}));
 });

@@ -2,6 +2,8 @@ const express = require('express');
 const cookieParser = require('cookie-parser')
 const connectMongoDB = require('./config/mongo-db');
 const cors = require('cors');
+const methodOverride = require('method-override');
+const bodyParser = require('body-parser');
 
 // bind the authMiddleware as application-level middleware as it is used in every model
 const Middleware = require('./utils/middlewares');
@@ -12,7 +14,9 @@ const orderRoutes = require('./routes/api/order');
 require('dotenv').config();
 
 const app = express()
+app.use(bodyParser.json());
 app.use(cookieParser());
+app.use(methodOverride('_method'));
 app.use(express.json({ extended: false }));
 const port = process.env.PORT || 3000;
 
