@@ -62,15 +62,15 @@ router.get('/', (req, res) => {
 // @route GET api/menus/:filename
 // @access Public
 router.get('/:filename/image', (req, res) => {
-  gfs.files.find({filename: req.params.filename}).toArray((err, file) => {
-    if ( !file || file.length === 0 ) {
-      return res.status(404).json({
-        err: 'No files exist'
-      });
-    }
-    // Files exist
-    return res.json(files);
-  });
+    gfs.files.find({filename: req.params.filename}).toArray((err, file) => {
+      if ( !file || file.length === 0 ) {
+        return res.status(404).json({
+          err: 'No files exist'
+        });
+      }
+      // Files exist
+      return res.json(file);
+    });
 });
 
 // @route POST api/menus
@@ -130,10 +130,10 @@ router.delete('/:id', (req, res, next) => {
 
 // @route GET api/menu/id
 // @access public
-router.get('/:id', (req, res) => {
-  const query = MenuItem.findById(req.params.id);
+router.get('/:id', async (req, res) => {
+  const query = await MenuItem.findById(req.params.id);
   console.log("QUERY: ", query, query.photo);
-  const file = gfs.files.find({filename: query.photo}).toArray((err, file) => {
+  gfs.files.find({filename: query.photo}).toArray((err, file) => {
     if ( !file || file.length === 0 ) {
       return res.status(404).json({
         err: 'No files exist'
@@ -142,7 +142,6 @@ router.get('/:id', (req, res) => {
     // Files exist
     return res.json(files);
   });
-  return res.json(file);
   
   // const resp = {
   //      "name": query.name, "price": query.price, "weight": query.weight, "ingredients": query.ingredients,
