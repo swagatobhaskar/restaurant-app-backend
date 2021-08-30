@@ -6,20 +6,16 @@ const Grid = require('gridfs-stream');
 const mongoose = require('mongoose');
 const path = require('path');
 const crypto = require('crypto');
-
-
 const MenuItem = require('../../models/menuItems');
 
 const URI = process.env.mongoURI;
 
 const authorisedRoles = ['admin', 'staff'];
 
-const options = {
-    useNewUrlParser: true,
-    useUnifiedTopology: true
-};
-
-const conn = mongoose.createConnection(URI, options);
+const conn = mongoose.createConnection(URI, {
+  useNewUrlParser: true,
+  useUnifiedTopology: true
+});
 
 // Init gfs
 let gfs;
@@ -54,14 +50,15 @@ const upload = multer({ storage });
 // @route GET api/menus
 // @access Public
 router.get('/', (req, res) => {
+  
   MenuItem.find()
     .then(items => res.json({items, file: res.file}))
     .catch(err =>  res.status(400).json({'message': 'No items found!'}));
 });
 
-// @route GET api/menus/:filename
+// @route GET api/menus/image/:filename
 // @access Public
-router.get('/:filename/image', (req, res) => {
+router.get('/image/:filename', (req, res) => {
     gfs.files.find({filename: req.params.filename}).toArray((err, file) => {
       if ( !file || file.length === 0 ) {
         return res.status(404).json({
@@ -90,7 +87,21 @@ router.post('/', upload.single('photo'), (req, res) => {
   const category = req.body.category;
   const weight = req.body.weight;
   const ingredients = req.body.ingredients;
-  const photo = req.file.filename;
+  const photoFileame = req.file.filename;
+
+  gfs.files.find({filename: photo}, function(err, file) {
+    let readStream = gfs.createReadStream({filename: file.filename});
+    let data = '';
+    readStream.on('data', (chunk) => {
+      data += chunk.toString('base64');
+    })
+    readStream.on("error", function (err) {
+      res.send("Image not found");
+    });
+    readStream.pipe(req);
+  })
+
+  const photo = req.data;
 
   const newMenuData = {
     name, price, category, weight, ingredients, photo
@@ -103,7 +114,7 @@ router.post('/', upload.single('photo'), (req, res) => {
     .catch(err => res.status(400).json('Error: ' + err));
 });
 
-// @route PATCH api/menu/id
+// @route PATCH api/menu/:id
 // @access admin/staff
 router.patch('/:id', upload.single('photo'), (req, res, next) => {
   
@@ -120,7 +131,7 @@ router.patch('/:id', upload.single('photo'), (req, res, next) => {
     .catch(err => res.status(400).json({'message': 'Something went wrong!'}));
 });
 
-// @route DELETE api/menu/id
+// @route DELETE api/menu/:id
 // @access admin/staff
 router.delete('/:id', (req, res, next) => {
   MenuItem.findByIdAndDelete(req.params.id)
@@ -128,28 +139,12 @@ router.delete('/:id', (req, res, next) => {
     .catch(err => res.status(400).json({'message': 'No menu item found with this id!'}));
 });
 
-// @route GET api/menu/id
+// @route GET api/menu/:id
 // @access public
 router.get('/:id', async (req, res) => {
-  const query = await MenuItem.findById(req.params.id);
-  console.log("QUERY: ", query, query.photo);
-  gfs.files.find({filename: query.photo}).toArray((err, file) => {
-    if ( !file || file.length === 0 ) {
-      return res.status(404).json({
-        err: 'No files exist'
-      });
-    }
-    // Files exist
-    return res.json(files);
-  });
-  
-  // const resp = {
-  //      "name": query.name, "price": query.price, "weight": query.weight, "ingredients": query.ingredients,
-  //      "category": query.ingredients, "photo": file
-  //  };
-  // return res.status(200).send({resp});
-    //.then(menuItem => res.json(menuItem))
-    //.catch(err => res.status(400).json({'message': 'Something went wrong!'}));
+  MenuItem.findById(req.params.id)
+    .then(menu => res.status(200).json(menu))
+    .catch(err => res.status(400).send(err));  
 });
 
 module.exports = router;
