@@ -19,10 +19,12 @@ const conn = mongoose.createConnection(URI, {
 
 // Init gfs
 let gfs;
-
+Grid.mongo = mongoose.mongo;
 conn.once('open', () => {
-    gfs = Grid(conn.db, mongoose.mongo);
+    gfs = Grid(conn.db);
     gfs.collection('uploads');
+    // replace with the following in future
+    // gfs = new mongoose.mongo.GridFSBucket(conn.db, {bucketName: 'uploads',});
 });
 
 // create storage engine
@@ -50,24 +52,29 @@ const upload = multer({ storage });
 // @route GET api/menus
 // @access Public
 router.get('/', (req, res) => {
-  
   MenuItem.find()
-    .then(items => res.json({items, file: res.file}))
+    .then(items => res.status(200).json(items))
     .catch(err =>  res.status(400).json({'message': 'No items found!'}));
 });
 
 // @route GET api/menus/image/:filename
 // @access Public
 router.get('/image/:filename', (req, res) => {
-    gfs.files.find({filename: req.params.filename}).toArray((err, file) => {
-      if ( !file || file.length === 0 ) {
-        return res.status(404).json({
-          err: 'No files exist'
-        });
-      }
-      // Files exist
-      return res.json(file);
+  
+  gfs.files.findOne({filename: req.params.filename}, function(err, file) {
+    if (err) throw err;
+    let readStream = gfs.createReadStream({filename: file.filename});
+    /*
+    let data = '';
+    readStream.on('data', (chunk) => {
+      data += chunk.toString('base64');
+    })
+    readStream.on("error", function (err) {
+      res.send("Image not found");
     });
+    */
+    readStream.pipe(res);
+  })
 });
 
 // @route POST api/menus
@@ -87,21 +94,7 @@ router.post('/', upload.single('photo'), (req, res) => {
   const category = req.body.category;
   const weight = req.body.weight;
   const ingredients = req.body.ingredients;
-  const photoFileame = req.file.filename;
-
-  gfs.files.find({filename: photo}, function(err, file) {
-    let readStream = gfs.createReadStream({filename: file.filename});
-    let data = '';
-    readStream.on('data', (chunk) => {
-      data += chunk.toString('base64');
-    })
-    readStream.on("error", function (err) {
-      res.send("Image not found");
-    });
-    readStream.pipe(req);
-  })
-
-  const photo = req.data;
+  const photo = `http://127.0.0.1:3001/api/menus/images/${req.file.filename}`;
 
   const newMenuData = {
     name, price, category, weight, ingredients, photo
@@ -141,10 +134,24 @@ router.delete('/:id', (req, res, next) => {
 
 // @route GET api/menu/:id
 // @access public
-router.get('/:id', async (req, res) => {
+router.get('/:id', (req, res) => {
   MenuItem.findById(req.params.id)
     .then(menu => res.status(200).json(menu))
     .catch(err => res.status(400).send(err));  
 });
+
+// @route api/menus/images/all
+// @access public
+router.get('/images/all', (req, res) => {
+  gfs.files.find().toArray((err, files) => {
+    if ( !files || files.length === 0 ) {
+      return res.status(404).json({
+        err: 'No files exist'
+      });
+    }
+    // Files exist
+    return res.json(files);
+  });
+})
 
 module.exports = router;
