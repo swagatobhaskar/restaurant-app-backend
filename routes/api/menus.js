@@ -1,53 +1,30 @@
 const express = require('express');
 const router = express.Router();
 const multer = require('multer');
-const { GridFsStorage } = require('multer-gridfs-storage');
-const Grid = require('gridfs-stream');
-const mongoose = require('mongoose');
 const path = require('path');
 const crypto = require('crypto');
 const MenuItem = require('../../models/menuItems');
-
-const URI = process.env.mongoURI;
+const cloudinary = require('cloudinary').v2;
+const { CloudinaryStorage } = require('multer-storage-cloudinary');
 
 const authorisedRoles = ['admin', 'staff'];
 
-const conn = mongoose.createConnection(URI, {
-  useNewUrlParser: true,
-  useUnifiedTopology: true
+cloudinary.config({ 
+  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+  api_key: process.env.CLOUDINARY_API_KEY,
+  api_secret: process.env.CLOUDINARY_API_SECRET
 });
 
-// Init gfs
-let gfs;
-Grid.mongo = mongoose.mongo;
-conn.once('open', () => {
-    gfs = Grid(conn.db);
-    gfs.collection('uploads');
-    // replace with the following in future
-    // gfs = new mongoose.mongo.GridFSBucket(conn.db, {bucketName: 'uploads',});
+const storage = new CloudinaryStorage({
+  cloudinary: cloudinary,
+  params: {
+    folder: 'restaurant_menus',
+    //format: async (req, file) => '',
+    //public_id: (req, file) => '',
+  },
 });
 
-// create storage engine
-const storage = new GridFsStorage({
-    url: URI,
-    file: (req, file) => {
-        return new Promise((resolve, reject) => {
-            crypto.randomBytes(16, (err, buf) => {
-                if (err) {
-                    return reject(err);
-                }
-                const filename = buf.toString('hex') + path.extname(file.originalname);
-                const fileInfo = {
-                    filename: filename,
-                    bucketName: 'uploads'
-                };
-                resolve(fileInfo);
-            });
-        });
-    }
-});
-
-const upload = multer({ storage });
+const upload = multer({ storage: storage });
 
 // @route GET api/menus
 // @access Public
@@ -55,26 +32,6 @@ router.get('/', (req, res) => {
   MenuItem.find()
     .then(items => res.status(200).json(items))
     .catch(err =>  res.status(400).json({'message': 'No items found!'}));
-});
-
-// @route GET api/menus/image/:filename
-// @access Public
-router.get('/image/:filename', (req, res) => {
-  
-  gfs.files.findOne({filename: req.params.filename}, function(err, file) {
-    if (err) throw err;
-    let readStream = gfs.createReadStream({filename: file.filename});
-    /*
-    let data = '';
-    readStream.on('data', (chunk) => {
-      data += chunk.toString('base64');
-    })
-    readStream.on("error", function (err) {
-      res.send("Image not found");
-    });
-    */
-    readStream.pipe(res);
-  })
 });
 
 // @route POST api/menus
@@ -94,7 +51,7 @@ router.post('/', upload.single('photo'), (req, res) => {
   const category = req.body.category;
   const weight = req.body.weight;
   const ingredients = req.body.ingredients;
-  const photo = `http://127.0.0.1:3001/api/menus/images/${req.file.filename}`;
+  const photo = req.file.path;
 
   const newMenuData = {
     name, price, category, weight, ingredients, photo
@@ -109,7 +66,7 @@ router.post('/', upload.single('photo'), (req, res) => {
 
 // @route PATCH api/menu/:id
 // @access admin/staff
-router.patch('/:id', upload.single('photo'), (req, res, next) => {
+router.patch('/:id', (req, res, next) => {
   
   if (!req.role in authorisedRoles) {
     res.status(401).send('You are not authorized to make changes!');
@@ -140,18 +97,71 @@ router.get('/:id', (req, res) => {
     .catch(err => res.status(400).send(err));  
 });
 
+module.exports = router;
+
+
+// const Grid = require('gridfs-stream');
+// const mongoose = require('mongoose');
+// const { GridFsStorage } = require('multer-gridfs-storage');
+
+// const conn = mongoose.createConnection(URI, {
+//   useNewUrlParser: true,
+//   useUnifiedTopology: true
+// });
+
+// Init gfs
+// let gfs;
+// Grid.mongo = mongoose.mongo;
+// conn.once('open', () => {
+//     gfs = Grid(conn.db);
+//     gfs.collection('uploads');
+//     // replace with the following in future
+//     // gfs = new mongoose.mongo.GridFSBucket(conn.db, {bucketName: 'uploads',});
+// });
+
+// create storage engine
+// const storage = new GridFsStorage({
+//   url: URI,
+//   file: (req, file) => {
+//       return new Promise((resolve, reject) => {
+//           crypto.randomBytes(16, (err, buf) => {
+//               if (err) {
+//                   return reject(err);
+//               }
+//               const filename = buf.toString('hex') + path.extname(file.originalname);
+//               const fileInfo = {
+//                   filename: filename,
+//                   bucketName: 'uploads'
+//               };
+//               resolve(fileInfo);
+//           });
+//       });
+//   }
+// });
+
+// const upload = multer({ storage });
+
+// @route GET api/menus/image/:filename
+// @access Public
+// router.get('/image/:filename', (req, res) => {
+//   gfs.files.findOne({filename: req.params.filename}, function(err, file) {
+//     if (err) throw err;
+//     let readStream = gfs.createReadStream({filename: file.filename});
+//     readStream.pipe(res);
+//   })
+// });
+
+
 // @route api/menus/images/all
 // @access public
-router.get('/images/all', (req, res) => {
-  gfs.files.find().toArray((err, files) => {
-    if ( !files || files.length === 0 ) {
-      return res.status(404).json({
-        err: 'No files exist'
-      });
-    }
-    // Files exist
-    return res.json(files);
-  });
-})
-
-module.exports = router;
+// router.get('/images/all', (req, res) => {
+//   gfs.files.find().toArray((err, files) => {
+//     if ( !files || files.length === 0 ) {
+//       return res.status(404).json({
+//         err: 'No files exist'
+//       });
+//     }
+//     // Files exist
+//     return res.json(files);
+//   });
+// })
