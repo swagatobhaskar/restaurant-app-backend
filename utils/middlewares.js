@@ -41,7 +41,12 @@ function authJWTMiddleware(req, res, next) {
     }
 };
 
+function logVisit(req, res, next) {
+	console.log(req.method, " ", req.originalUrl, " ", new Date());
+	next();
+}
 
 module.exports = {
-    authJWTMiddleware
+    authJWTMiddleware,
+	logVisit
 }

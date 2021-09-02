@@ -34,6 +34,7 @@ const port = process.env.PORT || 3001;
 connectMongoDB();
 
 app.use(Middleware.authJWTMiddleware);
+app.use(Middleware.logVisit);
 
 app.use(cors({ origin: true, credentials: true }));
 
