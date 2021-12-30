@@ -53,7 +53,7 @@ app.use('/api/order', orderRoutes);
 
 const swaggerOptions = {
     swaggerDefinition: {
-        openapi: '3.1.0',
+        openapi: '3.0.0',
         info: {
             title: 'Restaurant Site',
             version: '1.0.0',

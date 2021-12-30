@@ -9,8 +9,6 @@ const excludedPaths = [
 	'/api/menus/',
     '/api/menus',
     '/api/menus/images/all',
-    '/api-docs/',
-    '/api-docs',
 ]
 
 function authJWTMiddleware(req, res, next) {
@@ -18,6 +16,8 @@ function authJWTMiddleware(req, res, next) {
         //console.log(req.path);
         next();
 
+    } else if (req.path.includes('/api-docs/')) {
+        next();
     } else {
         
         const accessToken = req.cookies.access;
