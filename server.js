@@ -1,9 +1,11 @@
 const express = require('express');
 const cookieParser = require('cookie-parser')
-const connectMongoDB = require('./config/mongo-db');
 const cors = require('cors');
 const methodOverride = require('method-override');
 const bodyParser = require('body-parser');
+const swaggerUi = require('swagger-ui-express');
+const swaggerJSDoc = require('swagger-jsdoc'); 
+const connectMongoDB = require('./config/mongo-db');
 
 // bind the authMiddleware as application-level middleware as it is used in every model
 const Middleware = require('./utils/middlewares');
@@ -47,6 +49,31 @@ app.use('/api/users', userRoutes, function (req, res) {
 });
 
 app.use('/api/order', orderRoutes);
+
+
+const swaggerOptions = {
+    swaggerDefinition: {
+        openapi: '3.1.0',
+        info: {
+            title: 'Restaurant Site',
+            version: '1.0.0',
+            description: "This is a simple CRUD API application made with Express and documented with Swagger",
+            license: 'none',
+            contact: {
+                name: "Swagato Bhaskar",
+                email: "bhaskarsw@outlook.com"
+            },
+            servers: [
+                {
+                    url: 'http://127.0.0.1:3001',
+                },
+            ],
+        },
+    },
+    apis: ["/routes/api/menus.js",],
+};
+const specs = swaggerJSDoc(swaggerOptions);
+app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(specs, {explorer: true}));
 
 app.listen(port, () => console.log(`Server is listening on port ${port}`));
 

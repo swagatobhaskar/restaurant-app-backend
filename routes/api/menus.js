@@ -28,6 +28,18 @@ const upload = multer({ storage: storage });
 
 // @route GET api/menus
 // @access Public
+
+/** 
+ * @swagger 
+ * /Employees: 
+ *   get: 
+ *     description: Get all Employee 
+ *     responses:  
+ *       200: 
+ *         description: Success  
+ *   
+ */  
+
 router.get('/', (req, res) => {
   MenuItem.find()
     .then(items => res.status(200).json(items))
