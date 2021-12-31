@@ -30,13 +30,24 @@ const upload = multer({ storage: storage });
 // @access Public
 
 /** 
- * @swagger 
- * /Employees: 
- *   get: 
- *     description: Get all Employee 
- *     responses:  
- *       200: 
- *         description: Success  
+ *  @swagger 
+ *  /menus: 
+ *    get:
+ *      description: Get all menu items
+ *      responses:  
+ *        200: 
+ *          description: A list of menu items.
+ *          content:
+ *            application/json:
+ *              schema:
+ *                type: object
+ *                properties:
+ *                  name:
+ *                    type: string
+ *                    description: The name of menu item.
+ *                  category:
+ *                    type: boolean
+ *                    description: Whether the food item is veg or non-veg.
  *   
  */  
 
@@ -48,6 +59,18 @@ router.get('/', (req, res) => {
 
 // @route POST api/menus
 // @access admin/staff
+
+/** 
+ * @swagger 
+ * /menus: 
+ *   post: 
+ *     description: Create an new menu item
+ *     parameters:
+ *     responses:  
+ *       201: 
+ *         description: Created  
+ *   
+ */  
 router.post('/', upload.single('photo'), (req, res) => {
 
   if (!req.role in authorisedRoles) {

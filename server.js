@@ -63,14 +63,15 @@ const swaggerOptions = {
                 name: "Swagato Bhaskar",
                 email: "bhaskarsw@outlook.com"
             },
-            servers: [
-                {
-                    url: 'http://127.0.0.1:3001',
-                },
-            ],
         },
+        servers: [
+            {
+                url: "http://127.0.0.1:3001/api/",
+                description: 'Development Server'
+            },
+        ],
     },
-    apis: ["/routes/api/menus.js",],
+    apis: ['./routes/api/*.js',],
 };
 const specs = swaggerJSDoc(swaggerOptions);
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(specs, {explorer: true}));

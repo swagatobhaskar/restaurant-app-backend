@@ -9,14 +9,17 @@ const excludedPaths = [
 	'/api/menus/',
     '/api/menus',
     '/api/menus/images/all',
+    '/api-docs/',
+    '/api-docs',
 ]
 
 function authJWTMiddleware(req, res, next) {
+
     if (excludedPaths.includes(req.path)) {
         //console.log(req.path);
         next();
 
-    } else if (req.path.includes('/api-docs/')) {
+    } else if (req.path.includes('/api-docs')) {
         next();
     } else {
         
