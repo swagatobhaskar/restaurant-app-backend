@@ -9,9 +9,14 @@ const excludedPaths = [
 	'/api/menus/',
     '/api/menus',
     '/api/menus/images/all',
-    '/api-docs/',
-    '/api-docs',
 ]
+
+/**
+ * since I have placed Swagger middleware above auth middleware,
+ * i can omit these two path strings from the above list: 
+ *  '/api-docs/',
+ *  '/api-docs',
+ */
 
 function authJWTMiddleware(req, res, next) {
 

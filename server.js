@@ -35,22 +35,11 @@ const port = process.env.PORT || 3001;
 
 connectMongoDB();
 
-app.use(Middleware.authJWTMiddleware);
-app.use(Middleware.logVisit);
-
-app.use(cors({ origin: true, credentials: true }));
-
-app.get('/', (req, res) => res.send('Hello world!'));
-app.use('/api/menus', menuRoutes);
-
-// use the router and 401 anything falling through
-app.use('/api/users', userRoutes, function (req, res) {
-    res.sendStatus(401)
-});
-
-app.use('/api/order', orderRoutes);
-
-
+/**
+ * Swagger configuration.
+ * Placing this swagger middleware above auth middleware to skip authentication
+ * 
+ */ 
 const swaggerOptions = {
     swaggerDefinition: {
         openapi: '3.0.0',
@@ -75,6 +64,22 @@ const swaggerOptions = {
 };
 const specs = swaggerJSDoc(swaggerOptions);
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(specs, {explorer: true}));
+
+
+app.use(Middleware.authJWTMiddleware);
+app.use(Middleware.logVisit);
+
+app.use(cors({ origin: true, credentials: true }));
+
+app.get('/', (req, res) => res.send('Hello world!'));
+app.use('/api/menus', menuRoutes);
+
+// use the router and 401 anything falling through
+app.use('/api/users', userRoutes, function (req, res) {
+    res.sendStatus(401)
+});
+
+app.use('/api/order', orderRoutes);
 
 app.listen(port, () => console.log(`Server is listening on port ${port}`));
 
